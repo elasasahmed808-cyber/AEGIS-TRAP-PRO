@@ -1,16 +1,7 @@
 data "aws_caller_identity" "current" {}
 
 locals {
-  # "us.anthropic.claude-haiku-4-5-..." -> "anthropic.claude-haiku-4-5-..."
-  # Foundation-model ARNs use the base ID, never the geo prefix.
-  base_model_id = replace(var.bedrock_model_id, "/^(us|eu|apac|jp|au|global)\\./", "")
 
-  # Cross-region inference profiles need permission on BOTH the profile ARN and
-  # the underlying foundation model in every region the profile can route to.
-  model_arns = length(var.bedrock_model_arns) > 0 ? var.bedrock_model_arns : concat(
-    [for r in var.bedrock_profile_regions : "arn:aws:bedrock:${r}::foundation-model/${local.base_model_id}"],
-    ["arn:aws:bedrock:${var.region}:${data.aws_caller_identity.current.account_id}:inference-profile/${var.bedrock_model_id}"]
-  )
 
   documents_arn = "arn:aws:s3:::${var.documents_bucket_name}"
   build_arn     = "arn:aws:s3:::${var.build_artifacts_bucket_name}"
@@ -24,6 +15,10 @@ data "aws_iam_policy_document" "ec2_assume" {
       identifiers = ["ec2.amazonaws.com"]
     }
   }
+}
+
+data "aws_kms_key" "ssm_default" {
+  key_id = "alias/aws/ssm"
 }
 
 # ===================== DocuMind app role =====================
@@ -47,16 +42,19 @@ data "aws_iam_policy_document" "app" {
     actions   = ["s3:PutObject"]
     resources = ["${local.documents_arn}/${var.summaries_prefix}*"]
   }
+
   statement {
-    sid       = "InvokeOneModel"
-    actions   = ["bedrock:InvokeModel"]
-    resources = local.model_arns
+    sid       = "GetApmixApiKey"
+    actions   = ["ssm:GetParameter"]
+    resources = [aws_ssm_parameter.apmix_api_key.arn]
   }
+
   statement {
-    sid       = "ApplyOurGuardrail"
-    actions   = ["bedrock:ApplyGuardrail"]
-    resources = [var.guardrail_arn]
+    sid       = "DecryptApmixApiKey"
+    actions   = ["kms:Decrypt"]
+    resources = [data.aws_kms_key.ssm_default.arn]
   }
+
   statement {
     sid       = "PullBuildArtifact"
     actions   = ["s3:GetObject"]

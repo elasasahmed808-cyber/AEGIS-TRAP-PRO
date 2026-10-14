@@ -79,6 +79,15 @@ resource "aws_vpc_security_group_egress_rule" "jenkins_http" {
   cidr_ipv4         = "0.0.0.0/0"
 }
 
+# ADD to security_groups.tf (and change the ALB description to "ALB - HTTP/HTTPS")
+resource "aws_vpc_security_group_ingress_rule" "alb_https" {
+  security_group_id = aws_security_group.alb.id
+  ip_protocol       = "tcp"
+  from_port         = 443
+  to_port           = 443
+  cidr_ipv4         = "0.0.0.0/0"
+}
+
 # Quarantine: egress only to S3 via the gateway endpoint prefix list
 resource "aws_vpc_security_group_egress_rule" "quarantine_s3" {
   security_group_id = aws_security_group.quarantine.id
@@ -87,3 +96,6 @@ resource "aws_vpc_security_group_egress_rule" "quarantine_s3" {
   to_port           = 443
   prefix_list_id    = data.aws_prefix_list.s3.id
 }
+
+
+

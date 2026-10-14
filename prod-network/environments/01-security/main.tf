@@ -40,4 +40,16 @@ output "sns_topic_arn" {
 
 output "lambda_function_arn" {
   value = module.security_remediation.lambda_function_arn
+<<<<<<< HEAD
 }
+=======
+}
+
+output "playbook_lambda_arns" {
+  value = module.security_remediation.playbook_lambda_arns
+}
+
+output "evidence_bucket_name" {
+  value = module.security_remediation.evidence_bucket_name
+}
+>>>>>>> ed908f3 (compute came to an end, and added security remediations)

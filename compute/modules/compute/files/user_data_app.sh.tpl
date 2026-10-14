@@ -16,9 +16,7 @@ ARTIFACT_BUCKET=${artifact_bucket}
 ARTIFACT_KEY=${artifact_key}
 SUMMARIES_BUCKET=${summaries_bucket}
 SUMMARIES_PREFIX=${summaries_prefix}
-BEDROCK_MODEL_ID=${bedrock_model_id}
-GUARDRAIL_ID=${guardrail_id}
-GUARDRAIL_VERSION=${guardrail_version}
+APMIX_API_KEY_PARAM=${apmix_api_key_param}
 CFG
 chmod 644 /etc/documind/config.env
 

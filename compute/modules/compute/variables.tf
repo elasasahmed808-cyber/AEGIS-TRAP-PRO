@@ -3,6 +3,13 @@ variable "region" { type = string }
 variable "vpc_id" { type = string }
 variable "public_subnet_ids" { type = list(string) }
 variable "private_subnet_ids" { type = list(string) }
+
+variable "apmix_api_key_value" {
+  description = "APMIX.AI API key."
+  type        = string
+  sensitive   = true
+}
+
 variable "canary_users" {
   type = map(object({
     name = string
@@ -12,9 +19,7 @@ variable "canary_users" {
     "2" = { name = "proj-prod-canary-2" }
   }
 }
-variable "bedrock_profile_regions" {
-  type    = list(string)
-}
+
 variable "documents_bucket_name" { type = string }
 variable "build_artifacts_bucket_name" { type = string }
 variable "logging_bucket_name" { type = string }
@@ -32,14 +37,7 @@ variable "root_volume_size" {
   type    = number
   default = 30
 }
-variable "bedrock_model_id" { type = string }
-variable "bedrock_model_arns" {
-  type    = list(string)
-  default = []
-}
-variable "guardrail_id" { type = string }
-variable "guardrail_arn" { type = string }
-variable "guardrail_version" { type = string }
+
 variable "summaries_prefix" {
   type    = string
   default = "summaries/"

@@ -9,3 +9,4 @@ output "canary_1_secret" {
   value     = aws_iam_access_key.canary["1"].secret
   sensitive = true
 }
+output "app_url_https" { value = "https://${local.nip_hostname}" }

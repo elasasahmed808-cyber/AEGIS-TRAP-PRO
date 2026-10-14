@@ -52,36 +52,10 @@ variable "jenkins_instance_type" {
   default = "t3.micro"
 }
 
-# ---- Bedrock ----
-variable "bedrock_profile_regions" {
-  type    = list(string)
-  default = ["us-east-1", "us-east-2", "us-west-2"]
-}
-variable "bedrock_logs_bucket_name" {
-  type    = string
-  default = "proj-prod-bedrock-logs"
-}
-variable "bedrock_model_id" {
+variable "apmix_api_key_value" {
+  description = "APMIX.AI API key. Pass via TF_VAR_apmix_api_key_value env var — never commit this."
   type        = string
-  description = "The ONE model the app role may invoke"
-  default     = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
-}
-variable "bedrock_model_arns" {
-  type        = list(string)
-  default     = []
-  description = "Override if using a cross-region inference profile (profile ARN + underlying foundation-model ARNs)"
-}
-variable "create_guardrail" {
-  type    = bool
-  default = true
-}
-variable "existing_guardrail_id" {
-  type    = string
-  default = ""
-}
-variable "existing_guardrail_version" {
-  type    = string
-  default = ""
+  sensitive   = true
 }
 
 variable "create_asg_kms_grant" {

@@ -10,16 +10,7 @@ locals {
   }
 }
 
-module "bedrock" {
-  source = "./modules/bedrock"
 
-  name_prefix                = local.name_prefix
-  region                     = var.region
-  logs_bucket_name           = var.bedrock_logs_bucket_name
-  create_guardrail           = var.create_guardrail
-  existing_guardrail_id      = var.existing_guardrail_id
-  existing_guardrail_version = var.existing_guardrail_version
-}
 
 module "compute" {
   source = "./modules/compute"
@@ -35,12 +26,7 @@ module "compute" {
   ami_id                      = var.ami_id
   app_instance_type           = var.app_instance_type
   jenkins_instance_type       = var.jenkins_instance_type
-  bedrock_profile_regions     = var.bedrock_profile_regions
-  bedrock_model_id            = var.bedrock_model_id
-  bedrock_model_arns          = var.bedrock_model_arns
-  guardrail_id                = module.bedrock.guardrail_id
-  guardrail_arn               = module.bedrock.guardrail_arn
-  guardrail_version           = module.bedrock.guardrail_version
   create_asg_kms_grant        = var.create_asg_kms_grant
   app_source_dir              = "${path.root}/documind-app/app"
+  apmix_api_key_value           = var.apmix_api_key_value
 }

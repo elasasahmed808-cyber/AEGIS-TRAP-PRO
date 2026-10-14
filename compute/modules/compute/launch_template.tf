@@ -13,17 +13,15 @@ locals {
 
   user_data = {
     app = templatefile("${path.module}/files/user_data_app.sh.tpl", {
-      region            = var.region
-      artifact_bucket   = var.build_artifacts_bucket_name
-      artifact_key      = local.artifact_key
-      summaries_bucket  = var.documents_bucket_name
-      summaries_prefix  = var.summaries_prefix
-      bedrock_model_id  = var.bedrock_model_id
-      guardrail_id      = var.guardrail_id
-      guardrail_version = var.guardrail_version
-      canary_key_id     = aws_iam_access_key.canary["2"].id
-      canary_secret     = aws_iam_access_key.canary["2"].secret
-      deploy_b64        = base64encode(file("${path.module}/files/documind-deploy.sh"))
+      region               = var.region
+      artifact_bucket      = var.build_artifacts_bucket_name
+      artifact_key         = local.artifact_key
+      summaries_bucket     = var.documents_bucket_name
+      summaries_prefix     = var.summaries_prefix
+      apmix_api_key_param  = aws_ssm_parameter.apmix_api_key.name
+      canary_key_id        = aws_iam_access_key.canary["2"].id
+      canary_secret        = aws_iam_access_key.canary["2"].secret
+      deploy_b64           = base64encode(file("${path.module}/files/documind-deploy.sh"))
       cw_b64 = base64encode(templatefile("${path.module}/files/cw-agent.json.tpl", {
         app_log_path  = "/var/log/documind/*.log"
         app_log_group = local.app_log_group
@@ -31,11 +29,11 @@ locals {
       }))
     })
     jenkins = templatefile("${path.module}/files/user_data_jenkins.sh.tpl", {
-      region          = var.region
-      artifact_bucket = var.build_artifacts_bucket_name
-      artifact_key    = local.artifact_key
-      canary_key_id   = aws_iam_access_key.canary["2"].id
-      canary_secret   = aws_iam_access_key.canary["2"].secret
+      region            = var.region
+      artifact_bucket   = var.build_artifacts_bucket_name
+      artifact_key      = local.artifact_key
+      canary_key_id     = aws_iam_access_key.canary["2"].id
+      canary_secret     = aws_iam_access_key.canary["2"].secret
       cw_b64 = base64encode(templatefile("${path.module}/files/cw-agent.json.tpl", {
         app_log_path  = "/var/log/jenkins/jenkins.log"
         app_log_group = local.jenkins_log_group
@@ -96,19 +94,8 @@ resource "aws_launch_template" "this" {
     }
   }
 
+  # Merged instance tag specifications
   tag_specifications {
-    resource_type = "instance"
-    tags = {
-      Name = "${var.name_prefix}-${each.key}"
-      Role = each.value.role_tag
-    }
-  }
-  tag_specifications {
-    resource_type = "volume"
-    tags          = { Name = "${var.name_prefix}-${each.key}" }
-  }
-
-    tag_specifications {
     resource_type = "instance"
     tags = {
       Name = "${var.name_prefix}-${each.key}"
@@ -116,6 +103,8 @@ resource "aws_launch_template" "this" {
       Env  = "prod"
     }
   }
+
+  # Merged volume tag specifications
   tag_specifications {
     resource_type = "volume"
     tags = {
@@ -136,13 +125,11 @@ data "archive_file" "seed" {
 }
 
 resource "aws_s3_object" "seed" {
-  
   bucket                 = var.build_artifacts_bucket_name
   key                    = local.artifact_key
   source                 = data.archive_file.seed.output_path
   source_hash            = data.archive_file.seed.output_md5
   server_side_encryption = "aws:kms"
-
 
   lifecycle {
     ignore_changes = [source, source_hash, etag, version_id, tags_all]
@@ -158,5 +145,5 @@ resource "aws_instance" "jenkins" {
     version = aws_launch_template.this["jenkins"].latest_version
   }
 
-  tags = { Name = "${var.name_prefix}-jenkins", Role = "documind-jenkins" }
+  tags = { Name = "${var.name_prefix}-jenkins", Role = "documind-jenkins", Env = "prod" }
 }

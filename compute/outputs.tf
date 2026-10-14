@@ -4,7 +4,6 @@ output "jenkins_instance_id" { value = module.compute.jenkins_instance_id }
 output "quarantine_sg_id" { value = module.compute.quarantine_sg_id }
 output "app_role_arn" { value = module.compute.app_role_arn }
 output "jenkins_role_arn" { value = module.compute.jenkins_role_arn }
-output "guardrail_id" { value = module.bedrock.guardrail_id }
 output "canary_user_1_access_key_id" { value = module.compute.canary_1_access_key_id }
 output "canary_user_1_secret" {
   value     = module.compute.canary_1_secret
