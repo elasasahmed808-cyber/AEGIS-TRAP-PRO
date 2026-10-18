@@ -1,0 +1,10 @@
+region                      = "us-east-1"
+vpc_id                      = "vpc-xxxxxxxx"
+public_subnet_ids           = ["subnet-pub-a", "subnet-pub-b"]
+private_subnet_ids          = ["subnet-priv-a", "subnet-priv-b"]
+kms_key_arn                 = "arn:aws:kms:us-east-1:111122223333:key/xxxx"
+documents_bucket_name       = "proj-prod-documents"
+build_artifacts_bucket_name = "proj-prod-build-artifacts"
+logging_bucket_name         = "proj-prod-logging"
+# ami_id                    = "ami-hardened"
+# bedrock_model_id          = "anthropic.claude-3-haiku-20240307-v1:0"

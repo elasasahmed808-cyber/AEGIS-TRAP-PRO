@@ -1,0 +1,56 @@
+// Repo layout: Jenkinsfile + app/ (app.py, requirements.txt)
+pipeline {
+  agent any
+  options { timestamps() }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git branch: 'master', url: 'APP_REPO_URL'
+      }
+    }
+    stage('Debug Workspace') {
+          steps {
+            sh 'pwd && ls -la'
+          }
+        }
+    stage('Prepare App Directory') {
+      steps {
+        sh '''
+          mkdir -p app
+          mv app.py requirements.txt app/
+        '''
+      }
+    }
+    stage('Scan') {
+      steps {
+        sh 'bandit -r app -ll'
+        sh 'pip-audit -r app/requirements.txt'
+      }
+    }
+    stage('Package') {
+      steps { sh 'tar -czf documind.tar.gz -C app .' }
+    }
+   stage('Upload') {
+      steps {
+        sh '''
+          aws s3 cp latest.tar.gz "s3://$ARTIFACT_BUCKET/documind/latest.tar.gz" --region $AWS_REGION
+          aws s3 cp latest.tar.gz "s3://$ARTIFACT_BUCKET/$ARTIFACT_KEY" --region $AWS_REGION
+        '''
+      }
+    }
+    stage('Deploy') {
+      steps {
+        sh '''
+          CMD_ID=$(aws ssm send-command --region $AWS_REGION \
+            --document-name AWS-RunShellScript \
+            --targets "Key=tag:Role,Values=documind-app" \
+            --parameters 'commands=["/usr/local/bin/documind-deploy"]' \
+            --max-concurrency 1 --max-errors 0 \
+            --query Command.CommandId --output text)
+          echo "SSM command: $CMD_ID"
+        '''
+      }
+    }
+  }
+}
