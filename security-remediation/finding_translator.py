@@ -24,13 +24,17 @@ Mapping (see the purpose sets / keyword lists below):
        COMPROMISED_CREDENTIALS          (key-disable-revoke)
   Everything else
     -> risk_type=GUARDDUTY_FINDING / SECURITY_HUB_FINDING
-       (only the quarantine Lambda's generic alert picks these up)
+       (only the generic-alert Lambda picks these up)
 
 Assumed-role sessions (userType=AssumedRole, userName "Role/session") are sent
 as role_name so the key-disable playbook revokes role sessions instead of
 trying to disable a temporary ASIA key.
 
 Environment:
+  SKIP_GUARDDUTY_FROM_SECURITYHUB - "true" drops Security Hub findings that
+                 originate from GuardDuty (they are already delivered by the
+                 GuardDuty rule), so both rules can be enabled without
+                 running the playbooks twice.
   MIN_SEVERITY - minimum GuardDuty severity (0-9 scale) to forward. The
                  EventBridge rule already filters on this; it is checked again
                  here as a second line of defence. Security Hub findings are
@@ -47,6 +51,9 @@ events = boto3.client("events")
 FORWARD_SOURCE = "custom.security.automation"
 FORWARD_DETAIL_TYPE = "Security Incident"
 MIN_SEVERITY = float(os.environ.get("MIN_SEVERITY", "7"))
+# When the native GuardDuty rule is enabled, GuardDuty findings that Security Hub
+# imports are dropped here so one detection never runs the playbooks twice.
+SKIP_GUARDDUTY_FROM_SECURITYHUB = os.environ.get("SKIP_GUARDDUTY_FROM_SECURITYHUB", "false").lower() == "true"
 
 # Threat purpose = the token before the first ":" in a GuardDuty finding type,
 # e.g. "Backdoor:EC2/CryptoMinerDomainRequest.B" -> "BACKDOOR".
@@ -155,8 +162,17 @@ def translate_securityhub(detail):
     return entries
 
 
+def _is_guardduty_finding(finding):
+    """True when a Security Hub finding was imported from GuardDuty."""
+    return (str(finding.get("ProductName", "")).lower() == "guardduty"
+            or str(finding.get("ProductArn", "")).lower().endswith("/aws/guardduty"))
+
+
 def _translate_securityhub_finding(finding):
     finding_id = finding.get("Id", "unknown")
+    if SKIP_GUARDDUTY_FROM_SECURITYHUB and _is_guardduty_finding(finding):
+        print(f"Skipping finding {finding_id}: GuardDuty finding already handled by the GuardDuty rule")
+        return None
     types = finding.get("Types") or []
     ftype = types[0] if types else "SecurityHubFinding"
 

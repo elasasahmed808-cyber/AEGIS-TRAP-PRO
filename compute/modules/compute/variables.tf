@@ -67,3 +67,9 @@ variable "create_asg_kms_grant" {
   default = false
 }
 variable "app_source_dir" { type = string }
+
+variable "jenkins_trigger_job_name" {
+  description = "Name of the Jenkins Pipeline job GitHub Actions remotely triggers"
+  type        = string
+  default     = "documind-deploy"
+}

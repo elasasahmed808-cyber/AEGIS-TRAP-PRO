@@ -2,10 +2,10 @@
 # Bridges native AWS security findings (GuardDuty / Security Hub) onto the
 # custom.security.automation event contract the playbooks listen to.
 #
-# GuardDuty is on by default. Security Hub is opt-in: GuardDuty findings are
-# also imported into Security Hub, so enabling both rules runs the playbooks
-# twice per detection (the translator de-duplicates per invocation, but the
-# two services deliver the same finding in separate events).
+# GuardDuty is on by default. Security Hub is opt-in. GuardDuty findings are also
+# imported into Security Hub, so when the GuardDuty rule is enabled the translator
+# ignores Security Hub findings whose product is GuardDuty (SKIP_GUARDDUTY_FROM_SECURITYHUB).
+# Security Hub then only contributes findings from other products (Inspector, Macie, ...).
 
 locals {
   translator_statements = [
@@ -60,6 +60,7 @@ resource "aws_lambda_function" "finding_translator" {
   environment {
     variables = {
       MIN_SEVERITY = tostring(var.translator_min_severity)
+      SKIP_GUARDDUTY_FROM_SECURITYHUB = tostring(var.enable_guardduty_trigger)
     }
   }
 }

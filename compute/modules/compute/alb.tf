@@ -57,6 +57,43 @@ resource "aws_lb_listener" "https" {
   }
 }
 
+# Jenkins target group. Whatever EC2 instance the Jenkins auto scaling group
+# is currently running registers here. GitHub Actions always calls the same
+# ALB URL - it never needs to know which instance is alive right now.
+resource "aws_lb_target_group" "jenkins" {
+  name     = "${var.name_prefix}-jenkins"
+  port     = 8080
+  protocol = "HTTP"
+  vpc_id   = var.vpc_id
+
+  health_check {
+    path                = "/jenkins/login"
+    matcher             = "200,403"
+    interval            = 15
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
+  }
+}
+
+# /jenkins/* on the same public URL the app already uses, forwarded to
+# Jenkins instead. Jenkins is configured (see user_data_jenkins.sh.tpl) to
+# serve itself under the /jenkins prefix so these paths line up.
+resource "aws_lb_listener_rule" "jenkins" {
+  listener_arn = aws_lb_listener.https.arn
+  priority     = 5
+
+  condition {
+    path_pattern {
+      values = ["/jenkins*"]
+    }
+  }
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.jenkins.arn
+  }
+}
+
 # Decoy / honeypot paths - answered by the ALB, never reach the app
 resource "aws_lb_listener_rule" "decoy" {
   listener_arn = aws_lb_listener.https.arn

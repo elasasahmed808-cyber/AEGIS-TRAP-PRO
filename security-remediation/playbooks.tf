@@ -1,7 +1,8 @@
-# Playbooks #2-#4 (Playbook #1 quarantine-swap lives in main.tf / lambda_function.py)
+# Responders other than the quarantine swap (which lives in main.tf / quarantine_swap.py)
 #   #2 asg-detach          -> asg_detach.py
 #   #3 key-disable-revoke  -> key_disable_revoke.py
 #   #4 ebs-snapshot        -> ebs_snapshot.py (+ evidence bucket)
+#   -  generic-alert       -> generic_alert.py (notify-only, events with no playbook)
 
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
@@ -82,6 +83,18 @@ locals {
   }
 
   playbooks = {
+    "generic-alert" = {
+      source_file = "generic_alert.py"
+      timeout     = 30
+      memory      = 128
+      env = {
+        SNS_TOPIC_ARN = aws_sns_topic.security_alerts.arn
+      }
+      # events the translator could not map to a playbook (see _classify in finding_translator.py)
+      risk_types = ["GUARDDUTY_FINDING", "SECURITY_HUB_FINDING", "GENERAL_ALERT"]
+      statements = []
+    }
+
     "asg-detach" = {
       source_file = "asg_detach.py"
       timeout     = 60

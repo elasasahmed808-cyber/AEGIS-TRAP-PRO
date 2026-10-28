@@ -29,11 +29,14 @@ locals {
       }))
     })
     jenkins = templatefile("${path.module}/files/user_data_jenkins.sh.tpl", {
-      region            = var.region
-      artifact_bucket   = var.build_artifacts_bucket_name
-      artifact_key      = local.artifact_key
-      canary_key_id     = aws_iam_access_key.canary["2"].id
-      canary_secret     = aws_iam_access_key.canary["2"].secret
+      region               = var.region
+      artifact_bucket      = var.build_artifacts_bucket_name
+      artifact_key         = local.artifact_key
+      canary_key_id        = aws_iam_access_key.canary["2"].id
+      canary_secret        = aws_iam_access_key.canary["2"].secret
+      efs_id               = aws_efs_file_system.jenkins_home.id
+      trigger_token_param  = aws_ssm_parameter.jenkins_trigger_token.name
+      trigger_job_name     = var.jenkins_trigger_job_name
       cw_b64 = base64encode(templatefile("${path.module}/files/cw-agent.json.tpl", {
         app_log_path  = "/var/log/jenkins/jenkins.log"
         app_log_group = local.jenkins_log_group
@@ -136,14 +139,6 @@ resource "aws_s3_object" "seed" {
   }
 }
 
-# Jenkins: ONE server, same private subnet as the app instances
-resource "aws_instance" "jenkins" {
-  subnet_id = var.private_subnet_ids[0]
-
-  launch_template {
-    id      = aws_launch_template.this["jenkins"].id
-    version = aws_launch_template.this["jenkins"].latest_version
-  }
-
-  tags = { Name = "${var.name_prefix}-jenkins", Role = "documind-jenkins", Env = "prod" }
-}
+# Jenkins used to be provisioned here as a single aws_instance. It is now
+# provisioned by aws_autoscaling_group.jenkins in asg.tf (min=max=desired=1)
+# so a dead instance is replaced automatically instead of staying dead.

@@ -23,7 +23,7 @@ data "aws_vpc" "existing_prod_vpc" {
 
 # استدعاء موديول العزل والتنبيهات
 module "security_remediation" {
-  source = "../../../modules/security-remediation"
+  source = "../../../security-remediation"
 
   vpc_id      = data.aws_vpc.existing_prod_vpc.id
   alert_email = "m.alaa.elhdad@gmail.com"
@@ -38,8 +38,8 @@ output "sns_topic_arn" {
   value = module.security_remediation.sns_topic_arn
 }
 
-output "lambda_function_arn" {
-  value = module.security_remediation.lambda_function_arn
+output "quarantine_swap_lambda_arn" {
+  value = module.security_remediation.quarantine_swap_lambda_arn
 }
 
 output "playbook_lambda_arns" {

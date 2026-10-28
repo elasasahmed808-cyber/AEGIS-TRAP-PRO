@@ -8,13 +8,13 @@ output "sns_topic_arn" {
   value       = aws_sns_topic.security_alerts.arn
 }
 
-output "lambda_function_arn" {
-  description = "The ARN of the remediation Lambda function"
-  value       = aws_lambda_function.remediation_lambda.arn
+output "quarantine_swap_lambda_arn" {
+  description = "The ARN of the quarantine-swap Lambda function"
+  value       = aws_lambda_function.quarantine_swap.arn
 }
 
 output "playbook_lambda_arns" {
-  description = "ARNs of playbooks #2-#4 (asg-detach, key-disable-revoke, ebs-snapshot)"
+  description = "ARNs of the responder Lambdas (asg-detach, key-disable-revoke, ebs-snapshot, generic-alert)"
   value       = { for k, f in aws_lambda_function.playbook : k => f.arn }
 }
 

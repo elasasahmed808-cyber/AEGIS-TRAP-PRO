@@ -38,3 +38,7 @@ output "public_subnets" {
 output "private_subnets" {
   value = module.network.private_subnet_ids
 }
+
+output "s3_vpc_endpoint_id" {
+  value = module.network.s3_vpc_endpoint_id
+}

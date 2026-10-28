@@ -14,7 +14,7 @@ resource "aws_security_group" "app" {
 }
 resource "aws_security_group" "jenkins" {
   name        = "${var.name_prefix}-jenkins"
-  description = "Jenkins - no inbound (SSM port-forward only)"
+  description = "Jenkins - inbound 8080 from the ALB only (plus SSM port-forward for the UI)"
   vpc_id      = var.vpc_id
 }
 resource "aws_security_group" "quarantine" {
@@ -61,6 +61,23 @@ resource "aws_vpc_security_group_egress_rule" "app_http" {
   from_port         = 80
   to_port           = 80
   cidr_ipv4         = "0.0.0.0/0"
+}
+
+# GitHub Actions no longer reaches Jenkins directly - it calls the ALB,
+# which is the one thing allowed to reach Jenkins on port 8080.
+resource "aws_vpc_security_group_egress_rule" "alb_to_jenkins" {
+  security_group_id            = aws_security_group.alb.id
+  ip_protocol                  = "tcp"
+  from_port                    = 8080
+  to_port                      = 8080
+  referenced_security_group_id = aws_security_group.jenkins.id
+}
+resource "aws_vpc_security_group_ingress_rule" "jenkins_from_alb" {
+  security_group_id            = aws_security_group.jenkins.id
+  ip_protocol                  = "tcp"
+  from_port                    = 8080
+  to_port                      = 8080
+  referenced_security_group_id = aws_security_group.alb.id
 }
 
 # Allow Jenkins to talk to the outside world for downloading plugins and receiving deployment commands

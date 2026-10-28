@@ -116,6 +116,25 @@ resource "aws_route_table_association" "private" {
   route_table_id = aws_route_table.private.id
 }
 
+# 7b. S3 Gateway VPC Endpoint
+data "aws_region" "current" {}
+
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${data.aws_region.current.name}.s3"
+  vpc_endpoint_type = "Gateway"
+
+  route_table_ids = [
+    aws_route_table.private.id,
+    aws_route_table.public.id,
+  ]
+
+  tags = {
+    Name = "DocuMind-S3-Gateway-Endpoint"
+    Env  = var.environment
+  }
+}
+
 # 8. Custom NACL
 resource "aws_network_acl" "custom_nacl" {
   vpc_id     = aws_vpc.main.id

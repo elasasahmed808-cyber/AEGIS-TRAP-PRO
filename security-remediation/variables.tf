@@ -51,7 +51,7 @@ variable "enable_guardduty_trigger" {
 }
 
 variable "enable_securityhub_trigger" {
-  description = "Translate Security Hub findings into playbook events. Leave false while the GuardDuty-to-Security Hub integration is enabled, otherwise each finding runs the playbooks twice"
+  description = "Translate Security Hub findings into playbook events. Safe to enable alongside the GuardDuty trigger: GuardDuty findings imported into Security Hub are ignored by the translator, so only findings from other products (Inspector, Macie, ...) are added"
   type        = bool
   default     = false
 }

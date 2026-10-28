@@ -122,6 +122,24 @@ data "aws_iam_policy_document" "jenkins" {
     actions   = ["s3:GetObject", "s3:PutObject", "s3:ListBucket", "s3:GetObjectVersion"]
     resources = [local.build_arn, "${local.build_arn}/*"]
   }
+
+  statement {
+    sid       = "ReadTriggerToken"
+    actions   = ["ssm:GetParameter"]
+    resources = [aws_ssm_parameter.jenkins_trigger_token.arn]
+  }
+
+  statement {
+    sid       = "DecryptTriggerToken"
+    actions   = ["kms:Decrypt"]
+    resources = [data.aws_kms_key.ssm_default.arn]
+  }
+
+  statement {
+    sid       = "MountJenkinsHome"
+    actions   = ["elasticfilesystem:ClientMount", "elasticfilesystem:ClientWrite", "elasticfilesystem:DescribeMountTargets"]
+    resources = [aws_efs_file_system.jenkins_home.arn]
+  }
 }
 
 resource "aws_iam_role_policy" "jenkins" {
