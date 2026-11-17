@@ -21,7 +21,10 @@ data "aws_iam_policy_document" "trust" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:elasasahmed808-cyber/AEGIS-TRAP-PRO.git:ref:refs/heads/main"]
+      values   = [
+        "repo:BaraaMohamed2311/Documind-app:*",
+        "repo:BaraaMohamed2311@*/Documind-app@*:*"
+      ]
     }
   }
 }
