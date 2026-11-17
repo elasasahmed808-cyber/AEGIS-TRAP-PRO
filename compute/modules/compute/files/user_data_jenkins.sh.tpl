@@ -47,13 +47,36 @@ fi
 grep -q "${efs_id}" /etc/fstab || echo "${efs_id}:/ /var/lib/jenkins efs _netdev,tls 0 0" >> /etc/fstab
 chown -R jenkins:jenkins /var/lib/jenkins
 
+# ---- Jenkins temp dir on EFS, not the root volume ---------------------
+# The root volume was running low on free space, which trips Jenkins'
+# built-in FreeTempSpaceMonitor and takes the built-in node offline -
+# that's why jobs were stuck "waiting for available executor" with Free
+# Temp Space flagged red on the Nodes page. Pointing java.io.tmpdir at
+# the EFS mount (already provisioned above, already survives instance
+# replacement) gives Jenkins a temp dir with real headroom instead of
+# the small root disk.
+mkdir -p /var/lib/jenkins/tmp
+chown jenkins:jenkins /var/lib/jenkins/tmp
+chmod 1777 /var/lib/jenkins/tmp
+
+# Automatic cleanup of files older than 7 days so the EFS temp dir
+# does not grow forever (EFS is billed per GB).
+cat > /etc/tmpfiles.d/jenkins-tmp.conf <<'TMPF'
+d /var/lib/jenkins/tmp 1777 jenkins jenkins 7d
+TMPF
+systemctl enable --now systemd-tmpfiles-clean.timer || true
+
 mkdir -p /etc/systemd/system/jenkins.service.d /var/log/jenkins
+# NOTE: the Jenkins RPM only reads JAVA_OPTS for JVM flags (JENKINS_JAVA_OPTS
+# is ignored). JAVA_OPTS here replaces the packaged default, so the
+# headless flag is kept explicitly.
 cat > /etc/systemd/system/jenkins.service.d/env.conf <<'DROP'
 [Service]
 Environment="AWS_REGION=${region}"
 Environment="ARTIFACT_BUCKET=${artifact_bucket}"
 Environment="ARTIFACT_KEY=${artifact_key}"
 Environment="JENKINS_OPTS=--prefix=/jenkins"
+Environment="JAVA_OPTS=-Djava.awt.headless=true -Djava.io.tmpdir=/var/lib/jenkins/tmp -Dhudson.node_monitors.TemporarySpaceMonitor.freeSpaceThreshold=500MB"
 DROP
 chown jenkins:jenkins /var/log/jenkins
 
@@ -113,6 +136,9 @@ for i in $(seq 1 30); do
   sleep 10
 done
 systemctl is-active jenkins
+
+# ---- Fail fast if the temp dir setting did not reach the JVM ----------
+retry bash -c 'tr "\0" "\n" < /proc/$(systemctl show -p MainPID --value jenkins)/cmdline | grep -q "^-Djava.io.tmpdir=/var/lib/jenkins/tmp$"'
 
 # ---- Optional security tools (isolated venv, must not block Jenkins) ----
 if python3 -m venv /opt/sectools && retry /opt/sectools/bin/pip install bandit pip-audit; then

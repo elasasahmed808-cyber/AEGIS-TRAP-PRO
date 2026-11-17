@@ -12,7 +12,7 @@ locals {
   os_log_group      = "/${var.name_prefix}/documind/os"
 
   user_data = {
-    app = templatefile("${path.module}/files/user_data_app.sh.tpl", {
+    app = replace(templatefile("${path.module}/files/user_data_app.sh.tpl", {
       region               = var.region
       artifact_bucket      = var.build_artifacts_bucket_name
       artifact_key         = local.artifact_key
@@ -21,14 +21,14 @@ locals {
       apmix_api_key_param  = aws_ssm_parameter.apmix_api_key.name
       canary_key_id        = aws_iam_access_key.canary["2"].id
       canary_secret        = aws_iam_access_key.canary["2"].secret
-      deploy_b64           = base64encode(file("${path.module}/files/documind-deploy.sh"))
+      deploy_b64           = base64encode(replace(file("${path.module}/files/documind-deploy.sh"), "\r", ""))
       cw_b64 = base64encode(templatefile("${path.module}/files/cw-agent.json.tpl", {
         app_log_path  = "/var/log/documind/*.log"
         app_log_group = local.app_log_group
         os_log_group  = local.os_log_group
       }))
-    })
-    jenkins = templatefile("${path.module}/files/user_data_jenkins.sh.tpl", {
+    }), "\r", "")
+    jenkins = replace(templatefile("${path.module}/files/user_data_jenkins.sh.tpl", {
       region               = var.region
       artifact_bucket      = var.build_artifacts_bucket_name
       artifact_key         = local.artifact_key
@@ -42,7 +42,7 @@ locals {
         app_log_group = local.jenkins_log_group
         os_log_group  = local.os_log_group
       }))
-    })
+    }), "\r", "")
   }
 
   instances = {

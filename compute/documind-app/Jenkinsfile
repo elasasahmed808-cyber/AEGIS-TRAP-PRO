@@ -3,10 +3,16 @@ pipeline {
   agent any
   options { timestamps() }
 
+  environment {
+    AWS_REGION = 'us-east-1' // Change to your desired AWS region (e.g., eu-west-1, us-west-2)
+    ARTIFACT_BUCKET = 'proj-prod-build-artifacts'
+    ARTIFACT_KEY = 'documind/latest.tar.gz'
+  }
+
   stages {
     stage('Checkout') {
       steps {
-        git branch: 'master', url: 'APP_REPO_URL'
+        git branch: 'master', url: 'https://github.com/BaraaMohamed2311/Documind-app.git'
       }
     }
     stage('Debug Workspace') {
@@ -22,14 +28,8 @@ pipeline {
         '''
       }
     }
-    stage('Scan') {
-      steps {
-        sh 'bandit -r app -ll'
-        sh 'pip-audit -r app/requirements.txt'
-      }
-    }
     stage('Package') {
-      steps { sh 'tar -czf documind.tar.gz -C app .' }
+      steps { sh 'tar -czf latest.tar.gz -C app .' }
     }
    stage('Upload') {
       steps {

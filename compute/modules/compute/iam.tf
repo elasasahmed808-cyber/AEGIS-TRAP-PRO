@@ -62,6 +62,25 @@ data "aws_iam_policy_document" "app" {
   }
 
   statement {
+    sid       = "ListBuildBucket"
+    actions   = ["s3:ListBucket"]
+    resources = [local.build_arn]
+  }
+
+  # Needed when the artifact is SSE-KMS encrypted with a customer-managed key.
+  # Scoped to use through S3 only; the key policy must still allow this account.
+  statement {
+    sid       = "DecryptBuildArtifactViaS3"
+    actions   = ["kms:Decrypt"]
+    resources = ["*"]
+    condition {
+      test     = "StringEquals"
+      variable = "kms:ViaService"
+      values   = ["s3.${var.region}.amazonaws.com"]
+    }
+  }
+
+  statement {
     sid       = "TempMarketplaceFirstUse"
     actions   = ["aws-marketplace:ViewSubscriptions", "aws-marketplace:Subscribe"]
     resources = ["*"]   # these actions don't support resource-level scoping
@@ -121,6 +140,17 @@ data "aws_iam_policy_document" "jenkins" {
     sid       = "BuildArtifactsRW"
     actions   = ["s3:GetObject", "s3:PutObject", "s3:ListBucket", "s3:GetObjectVersion"]
     resources = [local.build_arn, "${local.build_arn}/*"]
+  }
+
+  statement {
+    sid       = "KmsForBuildArtifactsViaS3"
+    actions   = ["kms:Decrypt", "kms:GenerateDataKey"]
+    resources = ["*"]
+    condition {
+      test     = "StringEquals"
+      variable = "kms:ViaService"
+      values   = ["s3.${var.region}.amazonaws.com"]
+    }
   }
 
   statement {
