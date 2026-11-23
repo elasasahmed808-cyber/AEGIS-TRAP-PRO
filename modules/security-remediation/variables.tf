@@ -6,7 +6,7 @@ variable "vpc_id" {
 variable "alert_email" {
   description = "The email address to receive security alerts via SNS"
   type        = string
-  default     = ""
+  default     = "baraamohamed2311@gmail.com"
 }
 
 variable "environment" {

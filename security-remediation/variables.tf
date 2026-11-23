@@ -6,7 +6,7 @@ variable "vpc_id" {
 variable "alert_email" {
   description = "The email address to receive security alerts via SNS"
   type        = string
-  default     = ""
+  default     = "baraamohamed2311@gmail.com"
 }
 
 variable "environment" {
@@ -59,7 +59,7 @@ variable "enable_securityhub_trigger" {
 variable "translator_min_severity" {
   description = "Minimum finding severity to forward, on the GuardDuty 0-9 scale. Security Hub severities are normalised to the same scale"
   type        = number
-  default     = 7
+  default     = 1
 
   validation {
     condition     = var.translator_min_severity >= 0 && var.translator_min_severity <= 9

@@ -30,3 +30,5 @@ module "compute" {
   app_source_dir              = "${path.root}/documind-app/app"
   apmix_api_key_value           = var.apmix_api_key_value
 }
+
+

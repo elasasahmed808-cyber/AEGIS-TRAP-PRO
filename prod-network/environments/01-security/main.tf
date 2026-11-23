@@ -18,7 +18,7 @@ provider "aws" {
 
 # ربط الـ VPC التي تم إنشاؤها للتو
 data "aws_vpc" "existing_prod_vpc" {
-  id = "vpc-0b6ba4167fcd9b426"
+  id = "vpc-02a73abb1818b4470"
 }
 
 # استدعاء موديول العزل والتنبيهات
@@ -26,7 +26,7 @@ module "security_remediation" {
   source = "../../../security-remediation"
 
   vpc_id      = data.aws_vpc.existing_prod_vpc.id
-  alert_email = "m.alaa.elhdad@gmail.com"
+  alert_email = "baraamohamed2311@gmail.com"
   environment = "prod"
 }
 
